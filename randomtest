@@ -1,0 +1,71 @@
+Function adjustAxis(x1 As Variant, x2 As Variant, y1 As Variant, y2 As Variant, sheetname As String, chartname As String)
+    Sheets(sheetname).ChartObjects(chartname).Chart.Axes(xlCategory).MinimumScale = x1
+    Sheets(sheetname).ChartObjects(chartname).Chart.Axes(xlCategory).MaximumScale = x2
+    Sheets(sheetname).ChartObjects(chartname).Chart.Axes(xlValue).MinimumScale = y1
+    Sheets(sheetname).ChartObjects(chartname).Chart.Axes(xlValue).MaximumScale = y2
+    ActiveSheet.Calculate
+    adjustAxis = "adj:" + chartname
+End Function
+
+Function backtest(entry_level As Variant, direction As Variant, next_levels As Variant, take_profit As Variant, stop_loss As Variant, trailing_stop_loss As Variant, return_type As Variant)
+    Dim i As Integer
+    Dim final_pnl As Double, pnl As Double, max_pnl As Double, ndays As Integer, output_arr(1 To 2) As Double
+    'Dim each_val(1 To 100) As Double
+    
+    final_pnl = 0
+    max_pnl = 0
+    ndays = next_levels.Rows.Count()
+    For i = 1 To next_levels.Rows.Count()
+        If return_type = "Percent" Then
+            If direction = 1 Then
+                pnl = Log(next_levels.Cells(i, 1).Value / entry_level)
+            Else
+                pnl = Log(entry_level / next_levels.Cells(i, 1).Value)
+            End If
+        Else
+            If direction = 1 Then
+                pnl = next_levels.Cells(i, 1).Value - entry_level
+            Else
+                pnl = entry_level - next_levels.Cells(i, 1).Value
+            End If
+        End If
+        
+        'each_val(i) = pnl
+        
+        If pnl >= CDbl(take_profit) Then
+            Exit For
+        End If
+        
+        If pnl <= CDbl(-stop_loss) Then
+            Exit For
+        End If
+        
+        If (max_pnl - pnl) >= CDbl(trailing_stop_loss) Then
+            Exit For
+        End If
+        
+        If pnl > max_pnl Then
+            max_pnl = pnl
+        End If
+    
+    Next i
+    
+    If i < ndays Then
+        ndays = i
+    End If
+    
+    final_pnl = pnl
+    
+    'to return array along rows
+    'Dim each_val(1 To 100) As Double
+    'backtest = Application.Transpose(each_val)
+    
+    'to return array along columns
+    'backtest = each_val
+    
+    output_arr(1) = final_pnl
+    output_arr(2) = CDbl(ndays)
+    
+    backtest = output_arr
+    
+End Function
